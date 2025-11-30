@@ -1,0 +1,89 @@
+#!/bin/bash
+# Combined app launcher and filesystem search
+# Fast search using rofi's built-in modes with custom script mode
+
+THEME="$HOME/.config/rofi/menu.rasi"
+CACHE_DIR="$HOME/.cache/rofi-search"
+CACHE_FILE="$CACHE_DIR/entries.cache"
+CACHE_AGE=300  # 5 minutes
+
+mkdir -p "$CACHE_DIR"
+
+# Check if cache is fresh
+cache_valid() {
+    [[ -f "$CACHE_FILE" ]] && \
+    [[ $(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0) )) -lt $CACHE_AGE ]]
+}
+
+# Build cache of apps
+build_cache() {
+    {
+        # Desktop applications
+        for dir in /usr/share/applications ~/.local/share/applications; do
+            [[ -d "$dir" ]] || continue
+            for desktop in "$dir"/*.desktop; do
+                [[ -f "$desktop" ]] || continue
+                name=$(grep -m1 "^Name=" "$desktop" 2>/dev/null | cut -d= -f2)
+                exec_cmd=$(grep -m1 "^Exec=" "$desktop" 2>/dev/null | cut -d= -f2 | sed 's/ %[fFuUdDnNickvm]//g')
+                nodisplay=$(grep -m1 "^NoDisplay=" "$desktop" 2>/dev/null | cut -d= -f2)
+                [[ "$nodisplay" == "true" ]] && continue
+                [[ -n "$name" && -n "$exec_cmd" ]] && echo "app|$name|$exec_cmd"
+            done
+        done | sort -t'|' -k2 -u
+    } > "$CACHE_FILE"
+}
+
+# Ensure cache exists
+cache_valid || build_cache
+
+show_menu() {
+    local entries=()
+
+    # Add quick actions
+    entries+=(
+        " Search files..."
+        "─────────────────────"
+    )
+
+    # Add cached apps
+    while IFS='|' read -r type name cmd; do
+        entries+=(" $name")
+    done < "$CACHE_FILE"
+
+    # Show rofi
+    local choice=$(printf '%s\n' "${entries[@]}" | rofi -dmenu \
+        -theme "$THEME" \
+        -p "" \
+        -i \
+        -matching fuzzy \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -kb-accept-entry "Return,KP_Enter" \
+        -kb-cancel "Escape,Control+bracketleft" \
+        -selected-row 2)
+
+    case "$choice" in
+        " Search files...")
+            search_files
+            ;;
+        " "*)
+            # Launch app - find the command
+            local app_name="${choice# }"
+            local cmd=$(grep "|$app_name|" "$CACHE_FILE" | cut -d'|' -f3 | head -1)
+            [[ -n "$cmd" ]] && eval "$cmd" &
+            ;;
+    esac
+}
+
+search_files() {
+    # Use rofi's filebrowser mode or locate
+    local file=$(rofi -show filebrowser \
+        -theme "$THEME" \
+        -kb-row-down "Down,Control+n" \
+        -kb-row-up "Up,Control+p" \
+        -filebrowser-directory ~ 2>/dev/null)
+
+    [[ -n "$file" && -f "$file" ]] && xdg-open "$file" &
+}
+
+show_menu

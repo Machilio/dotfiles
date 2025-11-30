@@ -1,0 +1,58 @@
+#!/bin/bash
+# Power menu submenu with vim navigation
+
+THEME="$HOME/.config/rofi/menu.rasi"
+VIM_KEYS="-kb-row-down 'Down,Control+n,j' -kb-row-up 'Up,Control+p,k' -kb-accept-entry 'Return,KP_Enter' -kb-cancel 'Escape,Control+bracketleft'"
+
+show_menu() {
+    local prompt="$1"
+    shift
+    printf '%s\n' "$@" | rofi -dmenu -theme "$THEME" -p "$prompt" -i \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -kb-accept-entry "Return,KP_Enter" \
+        -kb-cancel "Escape,Control+bracketleft"
+}
+
+confirm() {
+    local choice=$(printf "Yes\nNo" | rofi -dmenu -theme "$THEME" -p "Confirm?" -i \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k")
+    [[ "$choice" == "Yes" ]]
+}
+
+power_menu() {
+    local options=(
+        " Lock"
+        " Logout"
+        " Suspend"
+        " Reboot"
+        " Shutdown"
+        "← Back"
+    )
+
+    local choice=$(show_menu "Power" "${options[@]}")
+
+    case "$choice" in
+        " Lock")
+            hyprlock &
+            ;;
+        " Logout")
+            confirm && hyprctl dispatch exit
+            ;;
+        " Suspend")
+            confirm && systemctl suspend
+            ;;
+        " Reboot")
+            confirm && systemctl reboot
+            ;;
+        " Shutdown")
+            confirm && systemctl poweroff
+            ;;
+        "← Back")
+            exec rofi-menu
+            ;;
+    esac
+}
+
+power_menu

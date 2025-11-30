@@ -1,0 +1,64 @@
+#!/bin/bash
+# Config file editor menu
+
+THEME="$HOME/.config/rofi/menu.rasi"
+HYPR_DIR="$HOME/.config/hypr"
+
+show_menu() {
+    local prompt="$1"
+    shift
+    printf '%s\n' "$@" | rofi -dmenu -theme "$THEME" -p "$prompt" -i \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -kb-accept-entry "Return,KP_Enter" \
+        -kb-cancel "Escape,Control+bracketleft"
+}
+
+config_menu() {
+    local options=(
+        " hyprland.conf"
+        " keybinds.conf"
+        " windowrules.conf"
+        " environment.conf"
+        " hyprpaper.conf"
+        "─────────────"
+        " kitty.conf"
+        " waybar config"
+        " rofi menu"
+        "← Back"
+    )
+
+    local choice=$(show_menu "Config" "${options[@]}")
+
+    case "$choice" in
+        " hyprland.conf")
+            kitty -e nvim "$HYPR_DIR/hyprland.conf" &
+            ;;
+        " keybinds.conf")
+            kitty -e nvim "$HYPR_DIR/keybinds.conf" &
+            ;;
+        " windowrules.conf")
+            kitty -e nvim "$HYPR_DIR/windowrules.conf" &
+            ;;
+        " environment.conf")
+            kitty -e nvim "$HYPR_DIR/environment.conf" &
+            ;;
+        " hyprpaper.conf")
+            kitty -e nvim "$HYPR_DIR/hyprpaper.conf" &
+            ;;
+        " kitty.conf")
+            kitty -e nvim "$HOME/.config/kitty/kitty.conf" &
+            ;;
+        " waybar config")
+            kitty -e nvim "$HOME/.config/waybar/config.jsonc" "$HOME/.config/waybar/style.css" &
+            ;;
+        " rofi menu")
+            kitty -e nvim "$HOME/.local/bin/rofi-menu" &
+            ;;
+        "← Back")
+            exec rofi-menu
+            ;;
+    esac
+}
+
+config_menu

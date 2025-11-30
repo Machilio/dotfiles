@@ -1,0 +1,10 @@
+configuration {
+    font: "JetBrainsMono Nerd Font Medium 11";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    disable-history: false;
+    hover-select: false;
+    scroll-method: 0;
+}
+
+@theme "menu.rasi"

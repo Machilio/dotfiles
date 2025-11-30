@@ -1,0 +1,126 @@
+{
+  "output": "DP-2",
+  "layer": "top",
+  "position": "top",
+  "height": 38,
+  "spacing": 6,
+
+  "modules-left": [
+    "cpu",
+    "temperature#cpu",
+    "memory",
+    "custom/gpu-usage",
+    "temperature#gpu",
+    "idle_inhibitor",
+    "clock"
+  ],
+
+  "modules-center": [
+    "hyprland/workspaces",
+    "hyprland/window"
+  ],
+
+  "modules-right": [
+    "network",
+    "pulseaudio",
+    "pulseaudio#microphone",
+    "custom/updates",
+    "tray"
+  ],
+
+  "hyprland/workspaces": {
+    "all-outputs": false,
+    "active-only": true,
+    "move-to-monitor": true,
+    "disable-scroll": true,
+    "format": "{name}",
+    "on-click": "activate",
+    "persistent-workspaces": []
+  },
+
+  "hyprland/window": {
+    "max-length": 80,
+    "separate-outputs": false,
+    "format": "{title}"
+  },
+
+  "cpu": {
+    "interval": 3,
+    "format": "{usage}% ",
+    "tooltip": true
+  },
+
+  "temperature#cpu": {
+    "hwmon-path-abs": "/sys/devices/pci0000:00/0000:00:18.3/hwmon",
+    "input-filename": "temp1_input",
+    "critical-threshold": 80,
+    "format": "{temperatureC}°C",
+    "format-critical": "{temperatureC}°C !"
+  },
+
+  "memory": {
+    "interval": 5,
+    "format": "{used:0.1f}G ",
+    "tooltip": true
+  },
+
+  "custom/gpu-usage": {
+    "format": "{text} 󰾲",
+    "exec": "bash -lc 'gpu-usage-waybar | head -n1'",
+    "return-type": "json",
+    "interval": 2
+  },
+
+  "temperature#gpu": {
+    "hwmon-path": "/sys/class/hwmon/hwmon1/temp2_input",
+    "format": "{temperatureC}°C",
+    "critical-threshold": 90,
+    "format-critical": "{temperatureC}°C"
+  },
+
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "",
+      "deactivated": ""
+    }
+  },
+
+  "clock": {
+    "format": "{:%H:%M}",
+    "tooltip-format": "{:%A, %Y-%m-%d  %H:%M}"
+  },
+
+  "network": {
+    "interval": 5,
+    "format-ethernet": "",
+    "format-disconnected": "󰖪",
+    "tooltip": true
+  },
+
+  "pulseaudio": {
+    "format": "{volume}% ",
+    "format-muted": "",
+    "scroll-step": 1,
+    "on-click": "pavucontrol"
+  },
+
+  "pulseaudio#microphone": {
+    "format": "",
+    "format-muted": "",
+    "scroll-step": 1,
+    "on-click": "pavucontrol"
+  },
+
+  "custom/updates": {
+    "format": " {text}",
+    "exec": "/home/kush/.local/bin/checkupdates.sh",
+    "interval": 900,
+    "tooltip": false
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 6
+  }
+}

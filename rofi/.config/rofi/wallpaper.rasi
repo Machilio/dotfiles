@@ -1,0 +1,49 @@
+/* Wallpaper selector theme with large previews */
+@import "menu.rasi"
+
+configuration {
+    show-icons: true;
+}
+
+window {
+    width: 1200px;
+}
+
+mainbox {
+    children: [listview];
+}
+
+listview {
+    lines: 2;
+    columns: 4;
+    spacing: 12px;
+    padding: 16px;
+    cycle: true;
+    fixed-height: false;
+    dynamic: true;
+    flow: horizontal;
+}
+
+element {
+    orientation: vertical;
+    padding: 8px;
+    spacing: 8px;
+    border-radius: 8px;
+    border: 0;
+}
+
+element selected {
+    border: 2px;
+    border-color: @accent;
+}
+
+element-icon {
+    size: 140px;
+    border-radius: 6px;
+    horizontal-align: 0.5;
+}
+
+element-text {
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+}

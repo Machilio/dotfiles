@@ -1,0 +1,79 @@
+#!/bin/bash
+# Custom scripts submenu with vim navigation
+
+THEME="$HOME/.config/rofi/menu.rasi"
+USER_SCRIPTS_DIR="$HOME/.config/rofi/scripts/user"
+
+show_menu() {
+    local prompt="$1"
+    shift
+    printf '%s\n' "$@" | rofi -dmenu -theme "$THEME" -p "$prompt" -i \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -kb-accept-entry "Return,KP_Enter" \
+        -kb-cancel "Escape,Control+bracketleft"
+}
+
+scripts_menu() {
+    local options=(
+        " Screenshot (full)"
+        " Screenshot (region)"
+        " Color Picker"
+        " Kill Window"
+        " Reload Hyprland"
+        "─────────────"
+        " Edit Scripts Menu"
+    )
+
+    # Add user scripts from directory
+    if [[ -d "$USER_SCRIPTS_DIR" ]]; then
+        for script in "$USER_SCRIPTS_DIR"/*; do
+            [[ -x "$script" ]] && options+=(" $(basename "$script")")
+        done
+    fi
+
+    options+=("← Back")
+
+    local choice=$(show_menu "Scripts" "${options[@]}")
+
+    case "$choice" in
+        " Screenshot (full)")
+            grim "$HOME/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png" && \
+                notify-send -t 2000 "Screenshot" "Saved to ~/Pictures"
+            ;;
+        " Screenshot (region)")
+            grim -g "$(slurp)" "$HOME/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png" && \
+                notify-send -t 2000 "Screenshot" "Saved to ~/Pictures"
+            ;;
+        " Color Picker")
+            if command -v hyprpicker &>/dev/null; then
+                color=$(hyprpicker -a)
+                notify-send -t 2000 "Color Picker" "Copied: $color"
+            else
+                notify-send -t 2000 "Color Picker" "hyprpicker not installed"
+            fi
+            ;;
+        " Kill Window")
+            hyprctl kill
+            ;;
+        " Reload Hyprland")
+            hyprctl reload && notify-send -t 1500 "Hyprland" "Config reloaded"
+            ;;
+        " Edit Scripts Menu")
+            ${EDITOR:-nvim} "$0" &
+            ;;
+        " "*)
+            # Run user script
+            local script_name="${choice# }"
+            [[ -x "$USER_SCRIPTS_DIR/$script_name" ]] && "$USER_SCRIPTS_DIR/$script_name"
+            ;;
+        "← Back")
+            exec rofi-menu
+            ;;
+    esac
+}
+
+# Create user scripts directory if it doesn't exist
+mkdir -p "$USER_SCRIPTS_DIR"
+
+scripts_menu

@@ -1,0 +1,58 @@
+#!/bin/bash
+# Wallpaper/theme picker - uses pywal to extract colors
+
+THEME="$HOME/.config/rofi/menu.rasi"
+WALLPAPER_DIRS=("$HOME/Pictures" "$HOME/Pictures/wallpapers" "$HOME/Pictures/Wallpapers")
+
+show_menu() {
+    local prompt="$1"
+    shift
+    printf '%s\n' "$@" | rofi -dmenu -theme "$THEME" -p "$prompt" -i \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -kb-accept-entry "Return,KP_Enter" \
+        -kb-cancel "Escape,Control+bracketleft"
+}
+
+theme_menu() {
+    local options=(
+        " Regenerate from current"
+        " Browse wallpapers"
+        "← Back"
+    )
+
+    # Add recent wallpapers if they exist
+    if [[ -f ~/.cache/current_wallpaper ]]; then
+        local current=$(cat ~/.cache/current_wallpaper)
+        options=(" Current: $(basename "$current")" "${options[@]}")
+    fi
+
+    local choice=$(show_menu "Theme" "${options[@]}")
+
+    case "$choice" in
+        " Current:"*|" Regenerate from current")
+            ~/.local/bin/theme-switch
+            ;;
+        " Browse wallpapers")
+            browse_wallpapers
+            ;;
+        "← Back")
+            exec rofi-menu
+            ;;
+    esac
+}
+
+browse_wallpapers() {
+    # Use rofi filebrowser to select wallpaper
+    local file=$(rofi -show filebrowser -theme "$THEME" \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -filebrowser-directory "$HOME/Pictures" \
+        -filebrowser-filter "*.jpg *.jpeg *.png *.webp" 2>/dev/null)
+
+    if [[ -n "$file" && -f "$file" ]]; then
+        ~/.local/bin/theme-switch --set "$file"
+    fi
+}
+
+theme_menu

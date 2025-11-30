@@ -1,0 +1,142 @@
+#!/bin/bash
+# System controls submenu with vim navigation
+
+THEME="$HOME/.config/rofi/menu.rasi"
+
+show_menu() {
+    local prompt="$1"
+    shift
+    printf '%s\n' "$@" | rofi -dmenu -theme "$THEME" -p "$prompt" -i \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -kb-accept-entry "Return,KP_Enter" \
+        -kb-cancel "Escape,Control+bracketleft"
+}
+
+get_volume() {
+    pamixer --get-volume 2>/dev/null || echo "N/A"
+}
+
+is_muted() {
+    pamixer --get-mute 2>/dev/null && echo " [MUTED]" || echo ""
+}
+
+get_wifi_status() {
+    local state=$(nmcli -t -f WIFI g 2>/dev/null)
+    [[ "$state" == "enabled" ]] && echo "ON" || echo "OFF"
+}
+
+get_wifi_ssid() {
+    nmcli -t -f active,ssid dev wifi 2>/dev/null | grep '^yes' | cut -d: -f2
+}
+
+system_menu() {
+    local vol=$(get_volume)
+    local muted=$(is_muted)
+    local wifi_status=$(get_wifi_status)
+    local wifi_ssid=$(get_wifi_ssid)
+
+    local options=(
+        " Volume: ${vol}%${muted}"
+        " Volume Up (+5%)"
+        " Volume Down (-5%)"
+        " Toggle Mute"
+        "─────────────"
+        " WiFi: $wifi_status ${wifi_ssid:+($wifi_ssid)}"
+        " WiFi Networks"
+        "─────────────"
+        " Media Play/Pause"
+        " Media Next"
+        " Media Previous"
+        "← Back"
+    )
+
+    local choice=$(show_menu "System" "${options[@]}")
+
+    case "$choice" in
+        " Volume Up (+5%)")
+            pamixer -i 5
+            notify-send -t 1500 "Volume" "$(pamixer --get-volume)%"
+            exec "$0"
+            ;;
+        " Volume Down (-5%)")
+            pamixer -d 5
+            notify-send -t 1500 "Volume" "$(pamixer --get-volume)%"
+            exec "$0"
+            ;;
+        " Toggle Mute")
+            pamixer -t
+            if pamixer --get-mute; then
+                notify-send -t 1500 "Volume" "Muted"
+            else
+                notify-send -t 1500 "Volume" "$(pamixer --get-volume)%"
+            fi
+            exec "$0"
+            ;;
+        " WiFi: "*|" WiFi Networks")
+            wifi_submenu
+            ;;
+        " Media Play/Pause")
+            playerctl play-pause
+            ;;
+        " Media Next")
+            playerctl next
+            ;;
+        " Media Previous")
+            playerctl previous
+            ;;
+        "← Back")
+            exec rofi-menu
+            ;;
+    esac
+}
+
+wifi_submenu() {
+    local wifi_status=$(get_wifi_status)
+
+    local options=(
+        " Toggle WiFi ($wifi_status)"
+        " Scan Networks"
+    )
+
+    # Add available networks if wifi is enabled
+    if [[ "$wifi_status" == "ON" ]]; then
+        while IFS=: read -r ssid signal security; do
+            [[ -n "$ssid" ]] && options+=("  $ssid ($signal% $security)")
+        done < <(nmcli -t -f ssid,signal,security dev wifi list 2>/dev/null | head -10)
+    fi
+
+    options+=("← Back")
+
+    local choice=$(show_menu "WiFi" "${options[@]}")
+
+    case "$choice" in
+        " Toggle WiFi"*)
+            if [[ "$wifi_status" == "ON" ]]; then
+                nmcli radio wifi off
+                notify-send -t 1500 "WiFi" "Disabled"
+            else
+                nmcli radio wifi on
+                notify-send -t 1500 "WiFi" "Enabled"
+            fi
+            exec "$0"
+            ;;
+        " Scan Networks")
+            nmcli dev wifi rescan 2>/dev/null
+            notify-send -t 1500 "WiFi" "Scanning..."
+            sleep 2
+            wifi_submenu
+            ;;
+        "  "*)
+            # Extract SSID from selection
+            local ssid=$(echo "$choice" | sed 's/^  //' | cut -d'(' -f1 | xargs)
+            nmcli dev wifi connect "$ssid" 2>/dev/null || \
+                notify-send -t 3000 "WiFi" "Failed to connect to $ssid - may need password"
+            ;;
+        "← Back")
+            system_menu
+            ;;
+    esac
+}
+
+system_menu

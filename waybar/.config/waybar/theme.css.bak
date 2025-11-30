@@ -1,0 +1,22 @@
+/* Pywal generated theme */
+
+@define-color base      #030215;
+@define-color surface   #030215;
+@define-color overlay   #8e8a93;
+@define-color text      #ccc6d2;
+@define-color subtext   #ccc6d2;
+
+@define-color blue      #9E6495;
+@define-color teal      #6295C4;
+@define-color green     #354994;
+@define-color yellow    #60549D;
+@define-color orange    #60549D;
+@define-color red       #553B88;
+
+@define-color accent    #9E6495;
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Font Awesome 6 Free", monospace;
+  font-size: 9pt;
+  min-height: 0;
+}

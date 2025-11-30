@@ -1,0 +1,38 @@
+* {
+    background: #222222ff;  /* Fully opaque dark */
+    foreground: #eeeeeeff;  /* Light text */
+    font: "monospace 14";
+}
+
+window {
+    background-color: @background;
+    border: 0;
+    width: 400;
+}
+
+mainbox, message, sidebar, prompt {
+    background-color: transparent;
+    border: 0;
+    margin: 0;
+}
+
+listview {
+    background-color: transparent;
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+entry {
+    background-color: #222222ff;
+    foreground: #eeeeeeff;
+    border: 1;
+    border-color: #333333;
+    margin: 10px 0px 10px 0px;
+    padding: 8px;
+}
+
+prompt, sidebar, message {
+    enabled: false;
+}
+

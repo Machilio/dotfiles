@@ -1,0 +1,78 @@
+#!/bin/bash
+# Hyprland keybindings menu with descriptions
+# Parses keybindings from hyprctl and displays in rofi
+
+THEME="$HOME/.config/rofi/menu.rasi"
+KEYBINDS_FILE="$HOME/.config/hypr/keybinds.conf"
+
+show_menu() {
+    rofi -dmenu -theme "$THEME" -p "Keybinds" -i \
+        -theme-str 'window { width: 700px; }' \
+        -theme-str 'listview { lines: 15; }' \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -kb-accept-entry "Return,KP_Enter" \
+        -kb-cancel "Escape,Control+bracketleft"
+}
+
+# Function to format modifier keys nicely
+format_mods() {
+    local mods="$1"
+    mods="${mods//SUPER/}"
+    mods="${mods//SHIFT/}"
+    mods="${mods//CONTROL/^}"
+    mods="${mods//ALT/}"
+    echo "$mods"
+}
+
+# Get keybindings from hyprctl (live config)
+get_keybindings() {
+    hyprctl binds -j | jq -r '
+        .[] |
+        # Build modifier string
+        (
+            (if .modmask | . >= 64 then "Super + " else "" end) +
+            (if (.modmask % 64) >= 4 then "Ctrl + " else "" end) +
+            (if (.modmask % 4) >= 1 then "Shift + " else "" end) +
+            (if (.modmask % 64) >= 8 then "Alt + " else "" end)
+        ) as $mods |
+        # Format the key name
+        (.key | gsub("^code:"; "")) as $key |
+        # Build description or fallback to dispatcher + arg
+        (if .description != "" then
+            .description
+        else
+            "\(.dispatcher) \(.arg)"
+        end) as $desc |
+        # Output format: keybind | description
+        "\($mods)\($key)|\($desc)"
+    ' | sort -t'|' -k1 | while IFS='|' read -r keybind desc; do
+        # Clean up the description
+        desc="${desc#"${desc%%[![:space:]]*}"}"  # trim leading whitespace
+        desc="${desc%"${desc##*[![:space:]]}"}"  # trim trailing whitespace
+
+        # Format output with fixed-width keybind column
+        printf "%-22s  %s\n" "$keybind" "$desc"
+    done
+}
+
+main() {
+    local bindings
+    bindings=$(get_keybindings)
+
+    if [[ -z "$bindings" ]]; then
+        notify-send -t 3000 "Keybinds" "Failed to get keybindings from Hyprland"
+        exit 1
+    fi
+
+    local choice
+    choice=$(echo "$bindings" | show_menu)
+
+    # User selected something - we could copy to clipboard
+    if [[ -n "$choice" ]]; then
+        echo "$choice" | wl-copy
+        notify-send -t 1500 "Keybinds" "Copied to clipboard"
+    fi
+}
+
+main

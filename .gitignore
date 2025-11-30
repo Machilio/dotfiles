@@ -1,0 +1,30 @@
+# NEVER commit - active credentials
+.claude/
+.mc/
+.ssh/
+.docker/
+.steam/
+**/credentials*
+**/token*
+**/*.pem
+**/*.key
+**/secret*
+
+# Personal data
+.histfile
+.bash_history
+.zsh_history
+*.log
+
+# Large app data
+.cache/
+.config/Vesktop/
+.config/BraveSoftware/
+.config/BlueMail/
+.config/Chromium/
+
+# Editor backup files
+*~
+*.swp
+*.swo
+.*.swp
